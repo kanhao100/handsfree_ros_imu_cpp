@@ -8,6 +8,15 @@ This is the C++ version of [hansfree_ros_imu](https://gitee.com/HANDS-FREE/hands
 #### 介绍
 这是[hansfree_ros_imu](https://gitee.com/HANDS-FREE/handsfree_ros_imu)的C++版本，是handsfree的IMU传感器ROS驱动包，负责将IMU传感器通过串口发送的数据通过ROS Topic广播。由于厂家提供的ROS驱动包[hansfree_ros_imu](https://gitee.com/HANDS-FREE/handsfree_ros_imu)的运行效率极为低下，因此对其进行了优化并修改为了C++版本，极大幅度地降低了不必要的CPU占用率。
 
+#### 依赖安装
+```
+sudo apt-get update
+sudo apt-get install ros-$(echo $ROS_DISTRO)-ros-base
+sudo apt-get install ros-$(echo $ROS_DISTRO)-roscpp
+sudo apt-get install ros-$(echo $ROS_DISTRO)-rospy
+sudo apt-get install ros-$(echo $ROS_DISTRO)-std-msgs
+sudo apt-get install ros-$(echo $ROS_DISTRO)-serial
+```
 
 #### 安装教程
 

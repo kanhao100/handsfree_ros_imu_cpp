@@ -2,7 +2,7 @@
 
 <launch>
 
-    <!-- imu型号，默认 b9 -->
+    <!-- imu型号，默认 b6 -->
     <arg name="imu_type" default="b6" doc="imu_type [a9, b9, b6]"/>
 
     <node pkg="handsfree_ros_imu_cpp" type="hfi_$(arg imu_type)" name="imu" output="screen">
