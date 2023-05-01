@@ -1,0 +1,18 @@
+<!--imu 和 rviz 同时打开-->
+
+<launch>
+
+    <!-- imu型号，默认 b9 -->
+    <arg name="imu_type" default="b6" doc="imu_type [a9, b9, b6]"/>
+
+    <node pkg="handsfree_ros_imu_cpp" type="hfi_$(arg imu_type)" name="imu" output="screen">
+        <param name="port"               type = "str"    value="/dev/ttyUSB0"/>
+        <!-- a9 重力加速度归一化处理，True 使用归一化处理， False 不适用归一化处理 -->
+        <param name="gra_normalization"  type = "bool"   value="True" if="$(eval imu_type == 'a9')"/>
+    </node>
+
+    <!-- 加载 rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find handsfree_ros_imu_cpp)/rviz/handsfree_ros_imu.rviz">
+    </node>
+
+</launch>   
