@@ -58,7 +58,7 @@ roslaunch handsfree_ros_imu_cpp rviz_and_imu.launch imu_type:=b6
 ```
 
 #### TODO
-- 添加B9,A9两款传感器的支持，但我手上并没有相关传感器，欢迎Pull Request！
+- 添加A9传感器的支持，但我手上并没有相关传感器，欢迎Pull Request！
 
 
 

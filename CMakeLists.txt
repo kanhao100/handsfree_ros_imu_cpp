@@ -23,3 +23,6 @@ catkin_package(
 
 add_executable(hfi_b6 src/hfi_b6_ros.cpp)
 target_link_libraries(hfi_b6 ${catkin_LIBRARIES})
+
+add_executable(hfi_b9 src/hfi_b9_ros.cpp)
+target_link_libraries(hfi_b9 ${catkin_LIBRARIES})

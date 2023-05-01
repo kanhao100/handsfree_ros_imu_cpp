@@ -1,6 +1,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
 #include <serial/serial.h>
 #include <cmath>
 #include <tf/transform_broadcaster.h>
@@ -14,7 +15,9 @@ serial::Serial imu_serial;
 std::string imu_port;
 int imu_baudrate;
 sensor_msgs::Imu imu_msg;
+sensor_msgs::MagneticField mag_msg;
 ros::Publisher imu_pub;
+ros::Publisher mag_pub;
 
 //校验和函数
 bool checkSum(uint8_t* data, uint8_t check) {
@@ -27,9 +30,9 @@ bool checkSum(uint8_t* data, uint8_t check) {
 
 //处理串口数据函数
 void handleSerialData(uint8_t* data) {
-    uint8_t buff[11] = {0};
-    bool pub_flag[3] = {true, true, true}; // 是否发布标志,依次为加速度、角速度、角度
-    for (int i = 0; i < 3; i += 1)
+    uint8_t buff[11] = {0}; // 缓存数组
+    bool pub_flag[4] = {true, true, true}; // 是否发布标志,依次为加速度、角速度、角度
+    for (int i = 0; i < 4; i += 1)
     {
         for (int j = 0; j < 11; j += 1)
         {
@@ -100,19 +103,33 @@ void handleSerialData(uint8_t* data) {
             }
             break;
             }
+            case 0x54: {
+                if (pub_flag[3]) {
+                    if (checkSum(buff, buff[10])) {
+                        int16_t mx = ((uint16_t)buff[2]) | ((uint16_t)buff[3] << 8);
+                        int16_t my = ((uint16_t)buff[4]) | ((uint16_t)buff[5] << 8);
+                        int16_t mz= ((uint16_t)buff[6]) | ((uint16_t)buff[7] << 8);
+                        mag_msg.magnetic_field.x = mx;
+                        mag_msg.magnetic_field.y = my;
+                        mag_msg.magnetic_field.z = mz;
+                    } else {
+                        ROS_WARN("0x54 Verification Failed");
+                    }
+                    pub_flag[3] = false;
+                }
+                break;
+            }
             default: {
                 ROS_WARN("ALL Verification Failed", buff[1]);
                 break;
             }
         }
-
     }
 
-    if (pub_flag[0] || pub_flag[1] || pub_flag[2]) {
+    if (pub_flag[0] || pub_flag[1] || pub_flag[2]|| pub_flag[3]) {
         return;
     }
-    pub_flag[0] = pub_flag[1] = pub_flag[2] = true;
-
+    pub_flag[0] = pub_flag[1] = pub_flag[2] = pub_flag[3] = true;
 }
 
 
@@ -139,21 +156,26 @@ int main(int argc, char** argv) {
     }
 
     imu_pub = nh.advertise<sensor_msgs::Imu>("/imu", 10);
+    mag_pub = nh.advertise<sensor_msgs::MagneticField>("/mag", 10);
 
     ros::Rate loop_rate(200);
-
 
     while (ros::ok()) {
         if (imu_serial.available() > 0) {
             size_t n = imu_serial.available();
             if(n!=0)
             {
-                uint8_t buffer[33];
+                uint8_t buffer[44];
                 n = imu_serial.read(buffer, n);
                 handleSerialData(buffer);
+
                 imu_msg.header.stamp = ros::Time::now();
                 imu_msg.header.frame_id = "base_link";
                 imu_pub.publish(imu_msg);
+
+                mag_msg.header.stamp = ros::Time::now();
+                mag_msg.header.frame_id = "base_link";
+                mag_pub.publish(mag_msg);
             }
         }
         loop_rate.sleep();
