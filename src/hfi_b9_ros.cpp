@@ -31,7 +31,7 @@ bool checkSum(uint8_t* data, uint8_t check) {
 //处理串口数据函数
 void handleSerialData(uint8_t* data) {
     uint8_t buff[11] = {0}; // 缓存数组
-    bool pub_flag[4] = {true, true, true}; // 是否发布标志,依次为加速度、角速度、角度
+    bool pub_flag[4] = {true, true, true, true}; // 是否发布标志,依次为加速度、角速度、角度、磁力计
     for (int i = 0; i < 4; i += 1)
     {
         for (int j = 0; j < 11; j += 1)
@@ -163,8 +163,7 @@ int main(int argc, char** argv) {
     while (ros::ok()) {
         if (imu_serial.available() > 0) {
             size_t n = imu_serial.available();
-            if(n!=0)
-            {
+            if(n!=0) {
                 uint8_t buffer[44];
                 n = imu_serial.read(buffer, n);
                 handleSerialData(buffer);

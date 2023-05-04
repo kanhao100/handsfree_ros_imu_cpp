@@ -22,7 +22,7 @@ mkdir handsfree_ros_workspace
 cd handsfree_ros_workspace
 mkdir src
 cd src
-git clone 
+git clone https://gitee.com/kanhao100/handsfree_ros_imu_cpp.git
 cd ..
 ```
 2. Build and configure environment variables:
