@@ -41,6 +41,12 @@ or
 ```
 rosrun handsfree_ros_imu_cpp hfi_b6
 ```
+Then, you can see the output of rostopic by executing these commands.
+```
+rostopic list
+rostopic hz /imu
+rostopic echo /imu
+```
 
 2. Run RVIZ visualization only:
 ```

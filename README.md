@@ -46,6 +46,12 @@ roslaunch handsfree_ros_imu_cpp handsfree_imu.launch imu_type:=b6
 ```
 rosrun handsfree_ros_imu_cpp hfi_b6
 ```
+单节点驱动启动后，可以通过如下命令简单查看和验证：
+```
+rostopic list
+rostopic hz /imu
+rostopic echo /imu
+```
 
 2.  只运行RVIZ可视化
 ```
