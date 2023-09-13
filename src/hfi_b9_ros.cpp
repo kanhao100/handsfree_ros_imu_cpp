@@ -30,58 +30,54 @@ bool checkSum(uint8_t* data, uint8_t check) {
 
 //处理串口数据函数
 void handleSerialData(uint8_t* data) {
-    uint8_t buff[11] = {0}; // 缓存数组
-    bool pub_flag[4] = {true, true, true, true}; // 是否发布标志,依次为加速度、角速度、角度、磁力计
+    uint8_t buff[11] = {0};
+    int ok_flag = 0;
     for (int i = 0; i < 4; i += 1)
     {
         for (int j = 0; j < 11; j += 1)
         {
+            if(j == 0){
+                if (data[j + i*11] != 0x55) {
+                    ROS_WARN("Header Wrong");
+                    return;
+                 }
+            }
             buff[j] = data[j + i*11];
-        }
-
-        if (buff[0] != 0x55) {
-            ROS_WARN("Header Wrong");
-            return;
         }
 
         switch (buff[1] & 0xff) {
             case 0x51: {
-                if (pub_flag[0]) {
-                    if (checkSum(buff, buff[10])) {
-                        int16_t ax = ((uint16_t)buff[2]) | ((uint16_t)buff[3] << 8);
-                        int16_t ay = ((uint16_t)buff[4]) | (uint16_t)buff[5] << 8;
-                        int16_t az = ((uint16_t)buff[6]) | (uint16_t)buff[7] << 8;
-                        imu_msg.linear_acceleration.x = ax * acc_factor;
-                        imu_msg.linear_acceleration.y = ay * acc_factor;
-                        imu_msg.linear_acceleration.z = az * acc_factor;
-                        //std::cout << imu_msg.linear_acceleration.x << " " << imu_msg.linear_acceleration.y << " " << imu_msg.linear_acceleration.z << " ";
-                    } else {
-                        ROS_WARN("0x51 Verification Failed");
-                    }
-                    pub_flag[0] = false;
+                if (checkSum(buff, buff[10])) {
+                    int16_t ax = ((uint16_t)buff[2]) | ((uint16_t)buff[3] << 8);
+                    int16_t ay = ((uint16_t)buff[4]) | (uint16_t)buff[5] << 8;
+                    int16_t az = ((uint16_t)buff[6]) | (uint16_t)buff[7] << 8;
+                    imu_msg.linear_acceleration.x = ax * acc_factor;
+                    imu_msg.linear_acceleration.y = ay * acc_factor;
+                    imu_msg.linear_acceleration.z = az * acc_factor;
+                    //std::cout << imu_msg.linear_acceleration.x << " " << imu_msg.linear_acceleration.y << " " << imu_msg.linear_acceleration.z << " ";
+                    ok_flag+=1;
+                } else {
+                    ROS_WARN("0x51 Verification Failed");
                 }
                 break;
             }
             case 0x52: {
-                if (pub_flag[1]) {
-                    if (checkSum(buff, buff[10])) {
-                        int16_t gx = ((uint16_t)buff[2]) | ((uint16_t)buff[3] << 8);
-                        int16_t gy = ((uint16_t)buff[4]) | ((uint16_t)buff[5] << 8);
-                        int16_t gz = ((uint16_t)buff[6]) | ((uint16_t)buff[7] << 8);
+                if (checkSum(buff, buff[10])) {
+                    int16_t gx = ((uint16_t)buff[2]) | ((uint16_t)buff[3] << 8);
+                    int16_t gy = ((uint16_t)buff[4]) | ((uint16_t)buff[5] << 8);
+                    int16_t gz = ((uint16_t)buff[6]) | ((uint16_t)buff[7] << 8);
 
-                        imu_msg.angular_velocity.x = gx * angv_factor;
-                        imu_msg.angular_velocity.y = gy * angv_factor;
-                        imu_msg.angular_velocity.z = gz * angv_factor;
-                        //std::cout << imu_msg.angular_velocity.x << " " << imu_msg.angular_velocity.y << " " << imu_msg.angular_velocity.z << " " << std::endl;
-                    } else {
-                        ROS_WARN("0x52 Verification Failed");
-                    }
-                    pub_flag[1] = false;
+                    imu_msg.angular_velocity.x = gx * angv_factor;
+                    imu_msg.angular_velocity.y = gy * angv_factor;
+                    imu_msg.angular_velocity.z = gz * angv_factor;
+                    //std::cout << imu_msg.angular_velocity.x << " " << imu_msg.angular_velocity.y << " " << imu_msg.angular_velocity.z << " " << std::endl;
+                    ok_flag+=1;
+                } else {
+                    ROS_WARN("0x52 Verification Failed");
                 }
                 break;
             }
             case 0x53: {
-            if (pub_flag[2]) {
                 if (checkSum(buff, buff[10])) {
                     int16_t roll_raw = ((uint16_t)buff[2]) | ((uint16_t)buff[3] << 8);
                     int16_t pitch_raw = ((uint16_t)buff[4]) | ((uint16_t)buff[5] << 8);
@@ -95,41 +91,44 @@ void handleSerialData(uint8_t* data) {
                     imu_msg.orientation.y = orientation1.y();
                     imu_msg.orientation.z = orientation1.z();
                     imu_msg.orientation.w = orientation1.w();
-
+                    ok_flag+=1;
                 } else {
                     ROS_WARN("0x53 Verification Failed");
                 }
-                pub_flag[2] = false;
-            }
-            break;
+                break;
             }
             case 0x54: {
-                if (pub_flag[3]) {
-                    if (checkSum(buff, buff[10])) {
-                        int16_t mx = ((uint16_t)buff[2]) | ((uint16_t)buff[3] << 8);
-                        int16_t my = ((uint16_t)buff[4]) | ((uint16_t)buff[5] << 8);
-                        int16_t mz= ((uint16_t)buff[6]) | ((uint16_t)buff[7] << 8);
-                        mag_msg.magnetic_field.x = mx;
-                        mag_msg.magnetic_field.y = my;
-                        mag_msg.magnetic_field.z = mz;
-                    } else {
-                        ROS_WARN("0x54 Verification Failed");
-                    }
-                    pub_flag[3] = false;
+                if (checkSum(buff, buff[10])) {
+                    int16_t mx = ((uint16_t)buff[2]) | ((uint16_t)buff[3] << 8);
+                    int16_t my = ((uint16_t)buff[4]) | ((uint16_t)buff[5] << 8);
+                    int16_t mz= ((uint16_t)buff[6]) | ((uint16_t)buff[7] << 8);
+                    mag_msg.magnetic_field.x = mx;
+                    mag_msg.magnetic_field.y = my;
+                    mag_msg.magnetic_field.z = mz;
+                    ok_flag+=1;
+                } else {
+                    ROS_WARN("0x54 Verification Failed");
                 }
                 break;
             }
+
             default: {
                 ROS_WARN("ALL Verification Failed", buff[1]);
+                ok_flag = 0;
                 break;
             }
         }
+
     }
 
-    if (pub_flag[0] || pub_flag[1] || pub_flag[2]|| pub_flag[3]) {
-        return;
+    if(4 == ok_flag){
+        imu_msg.header.stamp = ros::Time::now();
+        imu_pub.publish(imu_msg);
+
+        mag_msg.header.stamp = ros::Time::now();
+        mag_pub.publish(mag_msg);
     }
-    pub_flag[0] = pub_flag[1] = pub_flag[2] = pub_flag[3] = true;
+
 }
 
 
@@ -143,6 +142,9 @@ int main(int argc, char** argv) {
     imu_serial.setPort(imu_port);
     imu_serial.setBaudrate(imu_baudrate);
     imu_serial.setTimeout(serial::Timeout::max(), 50, 0, 50, 0);
+
+    imu_msg.header.frame_id = "base_link";
+    mag_msg.header.frame_id = "base_link";
 
     try {
         imu_serial.open();
@@ -160,27 +162,42 @@ int main(int argc, char** argv) {
 
     ros::Rate loop_rate(200);
 
+    size_t bytesRead = 0;
+    std::vector<uint8_t> buffer(44);
     while (ros::ok()) {
-        if (imu_serial.available() > 0) {
-            size_t n = imu_serial.available();
-            if(n!=0) {
-                uint8_t buffer[44];
-                n = imu_serial.read(buffer, n);
-                handleSerialData(buffer);
+        while (bytesRead < buffer.size()) {
+            size_t bytesRemaining = buffer.size() - bytesRead;
+            if(imu_serial.available()<bytesRemaining){
+                loop_rate.sleep();
+                continue;
+            }
 
-                imu_msg.header.stamp = ros::Time::now();
-                imu_msg.header.frame_id = "base_link";
-                imu_pub.publish(imu_msg);
-
-                mag_msg.header.stamp = ros::Time::now();
-                mag_msg.header.frame_id = "base_link";
-                mag_pub.publish(mag_msg);
+            size_t bytesReadNow = imu_serial.read(buffer.data() + bytesRead, bytesRemaining);
+            if (bytesReadNow > 0) {
+                bytesRead += bytesReadNow;
+            } else {
+                ROS_ERROR("Error reading data through serial port serial port %s", imu_port.c_str());
+                break;
             }
         }
-        loop_rate.sleep();
+
+         // 查找数据包的起始位置
+        auto startIt = std::find(buffer.begin(), buffer.end(), 0x55);
+        if (startIt != buffer.end()) {
+            size_t startIndex = std::distance(buffer.begin(), startIt);
+            size_t alignedBytes = buffer.size() - startIndex;
+
+            if(startIndex!=0){
+                // 对齐数据
+                std::rotate(buffer.begin(), startIt, buffer.end());
+                // 保证数据正确
+                imu_serial.read(buffer.data() + alignedBytes, startIndex);
+            }
+            handleSerialData(buffer.data());
+        }
+
     }
 
     imu_serial.close();
-
     return 0;
 }
