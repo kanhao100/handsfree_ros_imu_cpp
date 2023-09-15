@@ -37,7 +37,7 @@ void handleSerialData(uint8_t* data) {
             if(j == 0){
                 if (data[j + i*11] != 0x55) {
                     ROS_WARN("Header Wrong");
-                    return;
+                    return;   
                  }
             }
             buff[j] = data[j + i*11];
@@ -169,6 +169,7 @@ int main(int argc, char** argv) {
             }
             handleSerialData(buffer.data());
         }
+        bytesRead = 0;
     }
 
     imu_serial.close();
