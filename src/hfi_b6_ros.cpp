@@ -13,7 +13,6 @@
 serial::Serial imu_serial;
 std::string imu_port;
 int imu_baudrate;
-sensor_msgs::Imu imu_msg;
 ros::Publisher imu_pub;
 
 //校验和函数
@@ -27,6 +26,8 @@ inline bool checkSum(uint8_t* data, uint8_t check) {
 
 //处理串口数据函数
 void handleSerialData(uint8_t* data) {
+    sensor_msgs::Imu imu_msg;
+    imu_msg.header.frame_id = "base_link";
     uint8_t buff[11] = {0};
     int ok_flag = 0;
     for (int i = 0; i < 3; i += 1)
@@ -51,7 +52,6 @@ void handleSerialData(uint8_t* data) {
                     imu_msg.linear_acceleration.x = ax * acc_factor;
                     imu_msg.linear_acceleration.y = ay * acc_factor;
                     imu_msg.linear_acceleration.z = az * acc_factor;
-                    //std::cout << imu_msg.linear_acceleration.x << " " << imu_msg.linear_acceleration.y << " " << imu_msg.linear_acceleration.z << " ";
                     ok_flag+=1;
                 } else {
                     ROS_WARN("0x51 Verification Failed");
@@ -67,7 +67,6 @@ void handleSerialData(uint8_t* data) {
                     imu_msg.angular_velocity.x = gx * angv_factor;
                     imu_msg.angular_velocity.y = gy * angv_factor;
                     imu_msg.angular_velocity.z = gz * angv_factor;
-                    //std::cout << imu_msg.angular_velocity.x << " " << imu_msg.angular_velocity.y << " " << imu_msg.angular_velocity.z << " " << std::endl;
                     ok_flag+=1;
                 } else {
                     ROS_WARN("0x52 Verification Failed");
@@ -105,7 +104,7 @@ void handleSerialData(uint8_t* data) {
 
     if(3 == ok_flag){
         imu_msg.header.stamp = ros::Time::now();
-        imu_pub.publish(imu_msg);
+        imu_pub.publish(std::move(imu_msg));
     }
 
 }
@@ -121,8 +120,6 @@ int main(int argc, char** argv) {
     imu_serial.setPort(imu_port);
     imu_serial.setBaudrate(imu_baudrate);
     imu_serial.setTimeout(serial::Timeout::max(), 50, 0, 50, 0);
-
-    imu_msg.header.frame_id = "base_link";
     
     try {
         imu_serial.open();
